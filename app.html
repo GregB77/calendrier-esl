@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Calendrier</title>
+
+  <!-- Mobile first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+</head>
+<body>
+
+  <!-- TOP BAR -->
+<header class="topbar">
+  <button onclick="prevMonth()">◀</button>
+  <span id="weekLabel"></span>
+  <button onclick="nextMonth()">▶</button>
+</header>
+
+<main class="container">
+  <div id="calendar"></div>
+</main>
+
+
+  <!-- FIREBASE LIBS (COMPAT) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- APP SCRIPTS -->
+  <script src="js/firebase.js"></script>
+  <script src="data/vacances.js"></script>
+  <script src="js/calendar.js"></script>
+
+</body>
+</html>
