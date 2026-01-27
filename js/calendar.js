@@ -52,7 +52,7 @@ function loadVacancesZoneA() {
     return Promise.resolve();
   }
 
-  const jsonUrl = 
+  const jsonUrl =
     "https://data.education.gouv.fr/explore/dataset/fr-en-calendrier-scolaire/download/?format=json";
 
   return fetch(jsonUrl)
@@ -61,7 +61,7 @@ function loadVacancesZoneA() {
       return res.json();
     })
     .then(data => {
-      // Structure OpenDataSoft export : data.records
+      // Certains exports renvoient un tableau, d'autres un objet avec "records"
       const records = Array.isArray(data) ? data : (data.records || []);
 
       vacancesZoneA = records
@@ -70,34 +70,13 @@ function loadVacancesZoneA() {
           return zones === "Zone A";
         })
         .map(r => ({
-          start: (r.start_date || r.record?.start_date),
-          end: (r.end_date || r.record?.end_date),
-          label: (r.description || r.record?.description)
-        }));
-
-      localStorage.setItem(
-        "vacancesZoneA",
-        JSON.stringify(vacancesZoneA)
-      );
-
-      console.log("Vacances chargées depuis JSON export:", vacancesZoneA.length);
-    })
-    .catch(err => {
-      console.error("Vacances scolaires indisponibles", err);
-      vacancesZoneA = [];
-    });
-}
-
-      vacancesZoneA = data.results
-        .filter(r => r.record.zones === "Zone A")
-        .map(r => ({
-          start: r.record.start_date,
-          end: r.record.end_date,
-          label: r.record.description
+          start: r.start_date || r.record?.start_date,
+          end: r.end_date || r.record?.end_date,
+          label: r.description || r.record?.description
         }));
 
       localStorage.setItem("vacancesZoneA", JSON.stringify(vacancesZoneA));
-      console.log("Vacances chargées depuis API:", vacancesZoneA.length);
+      console.log("Vacances chargées depuis JSON export:", vacancesZoneA.length);
     })
     .catch(err => {
       console.error("Vacances scolaires indisponibles", err);
@@ -123,7 +102,6 @@ function renderMonth() {
   `;
   calendar.appendChild(header);
 
-  // parcourir les jours du mois
   const daysInMonth = new Date(year, currentMonth.getMonth() + 1, 0).getDate();
 
   for (let day = 1; day <= daysInMonth; day++) {
@@ -136,17 +114,14 @@ function renderMonth() {
     if (isJourFerie(date)) row.classList.add("ferie");
     if (isInVacances(date)) row.classList.add("vacances");
 
-    // colonne 1 : date
     const col1 = document.createElement("div");
     col1.className = "col-date";
     col1.textContent = date.toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit" }).toUpperCase();
 
-    // colonne 2 : durée (5 chars max)
     const col2 = document.createElement("input");
     col2.className = "col-duree";
     col2.maxLength = 5;
 
-    // colonne 3 : commentaires (30 chars max)
     const col3 = document.createElement("input");
     col3.className = "col-comment";
     col3.maxLength = 30;
@@ -176,4 +151,3 @@ document.addEventListener("DOMContentLoaded", () => {
     renderMonth();
   });
 });
-
