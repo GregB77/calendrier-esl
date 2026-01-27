@@ -7,33 +7,37 @@
   <!-- Mobile first -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;600&display=swap"
+    rel="stylesheet"
+  >
+
   <!-- CSS -->
   <link rel="stylesheet" href="css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
-
 </head>
+
 <body>
 
   <!-- TOP BAR -->
-<header class="topbar">
-  <button onclick="prevMonth()">◀</button>
-  <span id="weekLabel"></span>
-  <button onclick="nextMonth()">▶</button>
-</header>
+  <header class="topbar">
+    <button class="nav-btn" onclick="prevMonth()">◀</button>
+    <h2 id="monthTitle"></h2>
+    <button class="nav-btn" onclick="nextMonth()">▶</button>
+  </header>
 
-<main class="container">
-  <div id="calendar"></div>
-</main>
+  <!-- MAIN CONTENT -->
+  <main class="container">
+    <div id="calendar"></div>
+  </main>
 
-
-  <!-- FIREBASE LIBS (COMPAT) -->
+  <!-- FIREBASE (COMPAT) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <!-- APP SCRIPTS -->
   <script src="js/firebase.js"></script>
-  <script src="data/vacances.js"></script>
   <script src="js/calendar.js"></script>
 
 </body>
