@@ -40,6 +40,7 @@ function isWeekend(date) {
 function isJourFerie(date) {
   const key = `${pad(date.getDate())}-${pad(date.getMonth() + 1)}`;
   return JOURS_FERIES_FIXES.includes(key);
+  console.log("Jour férié :", date);
 }
 
 // =======================
@@ -191,3 +192,4 @@ document.addEventListener("touchend", e => {
 document.addEventListener("DOMContentLoaded", () => {
   loadVacancesZoneA().then(renderMonth);
 });
+
