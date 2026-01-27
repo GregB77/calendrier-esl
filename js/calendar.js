@@ -1,3 +1,5 @@
+alert("calendar.js chargé");
+
 // =======================
 // VARIABLES GLOBALES
 // =======================
@@ -192,4 +194,5 @@ document.addEventListener("touchend", e => {
 document.addEventListener("DOMContentLoaded", () => {
   loadVacancesZoneA().then(renderMonth);
 });
+
 
