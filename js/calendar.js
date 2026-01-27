@@ -1,16 +1,8 @@
-alert("calendar.js chargé");
-
-// =======================
 // VARIABLES GLOBALES
-// =======================
-
 let currentDate = new Date();
 let vacancesZoneA = [];
 
-// =======================
 // JOURS FÉRIÉS (fixes FR)
-// =======================
-
 const JOURS_FERIES_FIXES = [
   "01-01",
   "01-05",
@@ -22,9 +14,7 @@ const JOURS_FERIES_FIXES = [
   "25-12"
 ];
 
-// =======================
 // OUTILS
-// =======================
 
 function pad(n) {
   return n.toString().padStart(2, "0");
@@ -42,12 +32,9 @@ function isWeekend(date) {
 function isJourFerie(date) {
   const key = `${pad(date.getDate())}-${pad(date.getMonth() + 1)}`;
   return JOURS_FERIES_FIXES.includes(key);
-  console.log("Jour férié :", date);
 }
 
-// =======================
 // VACANCES SCOLAIRES – API
-// =======================
 
 function loadVacancesZoneA() {
   const cache = localStorage.getItem("vacancesZoneA");
@@ -187,12 +174,14 @@ document.addEventListener("touchend", e => {
   if (dx < -80) nextMonth();
 });
 
-// =======================
 // INIT
-// =======================
-
 document.addEventListener("DOMContentLoaded", () => {
-  loadVacancesZoneA().then(renderMonth);
+  console.log("DOM ready");
+  loadVacancesZoneA().then(() => {
+    console.log("vacances chargées :", vacancesZoneA.length);
+    renderMonth();
+  });
 });
+
 
 
