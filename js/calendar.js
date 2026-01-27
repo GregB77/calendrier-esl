@@ -52,19 +52,41 @@ function loadVacancesZoneA() {
     return Promise.resolve();
   }
 
-  const url =
-    "https://data.education.gouv.fr/api/explore/v2.0/catalog/datasets/fr-en-calendrier-scolaire/records?limit=500";
+  const jsonUrl = 
+    "https://data.education.gouv.fr/explore/dataset/fr-en-calendrier-scolaire/download/?format=json";
 
-  return fetch(url)
+  return fetch(jsonUrl)
     .then(res => {
       if (!res.ok) throw new Error("HTTP " + res.status);
       return res.json();
     })
     .then(data => {
-      if (!data.results) {
-        vacancesZoneA = [];
-        return;
-      }
+      // Structure OpenDataSoft export : data.records
+      const records = Array.isArray(data) ? data : (data.records || []);
+
+      vacancesZoneA = records
+        .filter(r => {
+          const zones = r.zones || r.record?.zones;
+          return zones === "Zone A";
+        })
+        .map(r => ({
+          start: (r.start_date || r.record?.start_date),
+          end: (r.end_date || r.record?.end_date),
+          label: (r.description || r.record?.description)
+        }));
+
+      localStorage.setItem(
+        "vacancesZoneA",
+        JSON.stringify(vacancesZoneA)
+      );
+
+      console.log("Vacances chargées depuis JSON export:", vacancesZoneA.length);
+    })
+    .catch(err => {
+      console.error("Vacances scolaires indisponibles", err);
+      vacancesZoneA = [];
+    });
+}
 
       vacancesZoneA = data.results
         .filter(r => r.record.zones === "Zone A")
@@ -154,3 +176,4 @@ document.addEventListener("DOMContentLoaded", () => {
     renderMonth();
   });
 });
+
