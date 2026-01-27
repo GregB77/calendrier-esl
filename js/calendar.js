@@ -1,13 +1,16 @@
 // =======================
-// CONFIG
+// VARIABLES GLOBALES
 // =======================
 
 let currentDate = new Date();
 let vacancesZoneA = [];
 
-// Jours fériés FR (fixes + mobiles simples)
+// =======================
+// JOURS FÉRIÉS (fixes FR)
+// =======================
+
 const JOURS_FERIES_FIXES = [
-  "01-01", // Jour de l'an
+  "01-01",
   "01-05",
   "08-05",
   "14-07",
@@ -18,15 +21,15 @@ const JOURS_FERIES_FIXES = [
 ];
 
 // =======================
-// UTILS
+// OUTILS
 // =======================
-
-function formatKey(date) {
-  return date.toISOString().split("T")[0];
-}
 
 function pad(n) {
   return n.toString().padStart(2, "0");
+}
+
+function formatKey(date) {
+  return date.toISOString().split("T")[0];
 }
 
 function isWeekend(date) {
@@ -40,23 +43,44 @@ function isJourFerie(date) {
 }
 
 // =======================
-// VACANCES SCOLAIRES (API)
+// VACANCES SCOLAIRES – API
 // =======================
 
 function loadVacancesZoneA() {
+  const cache = localStorage.getItem("vacancesZoneA");
+
+  if (cache) {
+    vacancesZoneA = JSON.parse(cache);
+    return Promise.resolve();
+  }
+
   const url =
     "https://data.education.gouv.fr/api/explore/v2.0/catalog/datasets/fr-en-calendrier-scolaire/records" +
     "?limit=100" +
-    "&refine=zone:A" +
-    "&refine=location:France";
+    "&refine=zones:Zone A" +
+    "&refine=location:France métropolitaine";
 
   return fetch(url)
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
     .then(data => {
+      if (!data.results) {
+        vacancesZoneA = [];
+        return;
+      }
+
       vacancesZoneA = data.results.map(r => ({
         start: r.start_date,
-        end: r.end_date
+        end: r.end_date,
+        label: r.description
       }));
+
+      localStorage.setItem(
+        "vacancesZoneA",
+        JSON.stringify(vacancesZoneA)
+      );
     })
     .catch(err => {
       console.error("Vacances scolaires indisponibles", err);
@@ -64,30 +88,28 @@ function loadVacancesZoneA() {
     });
 }
 
-function isVacancesZoneA(date) {
+function getVacancesZoneA(date) {
   const key = formatKey(date);
-  return vacancesZoneA.some(v => key >= v.start && key <= v.end);
+  return vacancesZoneA.find(v => key >= v.start && key <= v.end) || null;
 }
 
 // =======================
-// RENDER
+// RENDER DU MOIS
 // =======================
 
 function renderMonth() {
-  const container = document.getElementById("calendar");
-  container.innerHTML = "";
+  const calendar = document.getElementById("calendar");
+  calendar.innerHTML = "";
 
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-
-  // Header
-  document.getElementById("monthTitle").textContent =
-    currentDate.toLocaleDateString("fr-FR", {
+  const title = document.getElementById("monthTitle");
+  if (title) {
+    title.textContent = currentDate.toLocaleDateString("fr-FR", {
       month: "long",
       year: "numeric"
     });
+  }
 
-  // Table header
+  // En-tête colonnes
   const header = document.createElement("div");
   header.className = "calendar-header";
   header.innerHTML = `
@@ -95,13 +117,14 @@ function renderMonth() {
     <div class="col-duree">Durée</div>
     <div class="col-comment">Commentaires</div>
   `;
-  container.appendChild(header);
+  calendar.appendChild(header);
 
-  // Dates
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
 
-  for (let d = 1; d <= lastDay.getDate(); d++) {
+  const lastDay = new Date(year, month + 1, 0).getDate();
+
+  for (let d = 1; d <= lastDay; d++) {
     const date = new Date(year, month, d);
 
     const row = document.createElement("div");
@@ -109,7 +132,12 @@ function renderMonth() {
 
     if (isWeekend(date)) row.classList.add("weekend");
     if (isJourFerie(date)) row.classList.add("ferie");
-    if (isVacancesZoneA(date)) row.classList.add("vacancesA");
+
+    const vac = getVacancesZoneA(date);
+    if (vac) {
+      row.classList.add("vacancesA");
+      row.title = vac.label;
+    }
 
     const jour = date
       .toLocaleDateString("fr-FR", { weekday: "short" })
@@ -122,12 +150,12 @@ function renderMonth() {
       <input class="col-comment" maxlength="30" />
     `;
 
-    container.appendChild(row);
+    calendar.appendChild(row);
   }
 }
 
 // =======================
-// NAVIGATION
+// NAVIGATION MOIS
 // =======================
 
 function prevMonth() {
