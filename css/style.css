@@ -4,9 +4,8 @@
   --border: #e5e7eb;
   --text: #111827;
   --muted: #6b7280;
-
-  --weekend: #f1f3f5;
-  --holiday: #e5e7eb;
+  --weekend: #d3d3d3;
+  --holiday: #d3d3d3;
 
   --header: rgba(255,255,255,0.9);
 }
@@ -118,4 +117,5 @@ body {
 
 /* MOBILE TWEAK */
 @media (max-widt
+
 
