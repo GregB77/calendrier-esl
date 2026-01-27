@@ -1,153 +1,157 @@
-// ----------------------------
-// calendar.js
-// ----------------------------
+let currentDate = new Date();
+let uid = null;
+let vacancesZoneA = vacancesData.A || [];
 
-console.log("calendar.js chargé");
-
-let currentMonth = new Date();
-currentMonth.setDate(1);
-
-let vacancesZoneA = [];
-
-// jours fériés fixes
-const JOURS_FERIES_FIXES = [
-  "01-01",
-  "01-05",
-  "08-05",
-  "14-07",
-  "15-08",
-  "01-11",
-  "11-11",
-  "25-12"
-];
-
-function pad(n) {
-  return n.toString().padStart(2, "0");
-}
-
-function isJourFerie(date) {
-  const key = `${pad(date.getDate())}-${pad(date.getMonth() + 1)}`;
-  return JOURS_FERIES_FIXES.includes(key);
-}
-
-function isWeekend(date) {
-  const d = date.getDay();
-  return d === 0 || d === 6;
-}
-
-function isInVacances(date) {
-  return vacancesZoneA.some(v => {
-    const start = new Date(v.start);
-    const end = new Date(v.end);
-    return date >= start && date <= end;
-  });
-}
-
-function loadVacancesZoneA() {
-  const cache = localStorage.getItem("vacancesZoneA");
-
-  if (cache) {
-    vacancesZoneA = JSON.parse(cache);
-    console.log("Vacances chargées depuis cache:", vacancesZoneA.length);
-    return Promise.resolve();
+/* AUTH */
+auth.onAuthStateChanged(user => {
+  if (!user) {
+    window.location.href = "index.html";
+  } else {
+    uid = user.uid;
+    renderMonth();
   }
+});
 
-  const jsonUrl =
-    "https://data.education.gouv.fr/explore/dataset/fr-en-calendrier-scolaire/download/?format=json";
-
-  return fetch(jsonUrl)
-    .then(res => {
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      return res.json();
-    })
-    .then(data => {
-      // Certains exports renvoient un tableau, d'autres un objet avec "records"
-      const records = Array.isArray(data) ? data : (data.records || []);
-
-      vacancesZoneA = records
-        .filter(r => {
-          const zones = r.zones || r.record?.zones;
-          return zones === "Zone A";
-        })
-        .map(r => ({
-          start: r.start_date || r.record?.start_date,
-          end: r.end_date || r.record?.end_date,
-          label: r.description || r.record?.description
-        }));
-
-      localStorage.setItem("vacancesZoneA", JSON.stringify(vacancesZoneA));
-      console.log("Vacances chargées depuis JSON export:", vacancesZoneA.length);
-    })
-    .catch(err => {
-      console.error("Vacances scolaires indisponibles", err);
-      vacancesZoneA = [];
-    });
+/* FORMAT YYYY-MM-DD */
+function formatKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
-function renderMonth() {
-  const monthName = currentMonth.toLocaleString("fr-FR", { month: "long" });
-  const year = currentMonth.getFullYear();
-  document.getElementById("monthTitle").textContent = `${monthName} ${year}`;
+/* HOLIDAYS FR */
+function getFrenchHolidays(year) {
+  const holidays = [];
+  [
+    "01-01",
+    "05-01",
+    "05-08",
+    "07-14",
+    "08-15",
+    "11-01",
+    "11-11",
+    "12-25"
+  ].forEach(d => holidays.push(`${year}-${d}`));
 
+  const f = Math.floor;
+  const G = year % 19;
+  const C = f(year / 100);
+  const H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30;
+  const I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11));
+  const J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7;
+  const L = I - J;
+  const month = 3 + f((L + 40) / 44);
+  const day = L + 28 - 31 * f(month / 4);
+
+  const easter = new Date(year, month - 1, day);
+
+  const addDays = d => {
+    const x = new Date(easter);
+    x.setDate(x.getDate() + d);
+    holidays.push(formatKey(x));
+  };
+
+  addDays(1);
+  addDays(39);
+  addDays(50);
+
+  return holidays;
+}
+
+/* VACANCES ZONE A */
+function isVacancesZoneA(date) {
+  const key = formatKey(date);
+  return vacancesZoneA.some(v => key >= v.start && key <= v.end);
+}
+
+/* RENDER */
+function renderMonth() {
   const calendar = document.getElementById("calendar");
   calendar.innerHTML = "";
 
-  // entête colonnes
+  const y = currentDate.getFullYear();
+  const m = currentDate.getMonth();
+  const holidays = getFrenchHolidays(y);
+
+  const first = new Date(y, m, 1);
+  const last = new Date(y, m + 1, 0);
+
+  document.getElementById("weekLabel").innerText =
+    first.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+
   const header = document.createElement("div");
   header.className = "table-header";
   header.innerHTML = `
-    <div class="col-date">Date</div>
-    <div class="col-duree">Durée</div>
-    <div class="col-comment">Commentaires</div>
+    <div>Date</div>
+    <div>Durée</div>
+    <div>Commentaires</div>
   `;
   calendar.appendChild(header);
 
-  const daysInMonth = new Date(year, currentMonth.getMonth() + 1, 0).getDate();
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, currentMonth.getMonth(), day);
+  for (let d = 1; d <= last.getDate(); d++) {
+    const date = new Date(y, m, d);
+    const key = formatKey(date);
 
     const row = document.createElement("div");
     row.className = "day-row";
 
-    if (isWeekend(date)) row.classList.add("weekend");
-    if (isJourFerie(date)) row.classList.add("ferie");
-    if (isInVacances(date)) row.classList.add("vacances");
+    const day = date.getDay();
+    if (day === 0 || day === 6) row.classList.add("weekend");
+    if (holidays.includes(key)) row.classList.add("holiday");
+    if (isVacancesZoneA(date)) row.classList.add("vacancesA");
 
-    const col1 = document.createElement("div");
-    col1.className = "col-date";
-    col1.textContent = date.toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit" }).toUpperCase();
+    const colDate = document.createElement("div");
+    colDate.className = "col-date";
 
-    const col2 = document.createElement("input");
-    col2.className = "col-duree";
-    col2.maxLength = 5;
+    const jour = date.toLocaleDateString("fr-FR", { weekday: "short" }).toUpperCase();
+    const num = String(d).padStart(2, "0");
 
-    const col3 = document.createElement("input");
-    col3.className = "col-comment";
-    col3.maxLength = 30;
+    colDate.innerText = `${jour}\u00A0${num}`;
 
-    row.appendChild(col1);
-    row.appendChild(col2);
-    row.appendChild(col3);
+    const duration = document.createElement("input");
+    duration.maxLength = 5;
 
+    const comment = document.createElement("input");
+    comment.maxLength = 30;
+
+    db.ref(`users/${uid}/calendar/${key}`)
+      .once("value")
+      .then(snap => {
+        const v = snap.val() || {};
+        duration.value = v.duration || "";
+        comment.value = v.comment || "";
+      });
+
+    function save() {
+      db.ref(`users/${uid}/calendar/${key}`).set({
+        duration: duration.value,
+        comment: comment.value
+      });
+    }
+
+    duration.addEventListener("input", save);
+    comment.addEventListener("input", save);
+
+    row.append(colDate, duration, comment);
     calendar.appendChild(row);
   }
 }
 
+/* NAV */
 function prevMonth() {
-  currentMonth.setMonth(currentMonth.getMonth() - 1);
+  currentDate.setMonth(currentDate.getMonth() - 1);
   renderMonth();
 }
-
 function nextMonth() {
-  currentMonth.setMonth(currentMonth.getMonth() + 1);
+  currentDate.setMonth(currentDate.getMonth() + 1);
   renderMonth();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("DOM ready");
-  loadVacancesZoneA().then(() => {
-    console.log("vacances chargées :", vacancesZoneA.length);
-    renderMonth();
-  });
+/* SWIPE */
+let startX = 0;
+document.addEventListener("touchstart", e => startX = e.touches[0].clientX);
+document.addEventListener("touchend", e => {
+  const diff = e.changedTouches[0].clientX - startX;
+  if (Math.abs(diff) > 60) diff > 0 ? prevMonth() : nextMonth();
 });
