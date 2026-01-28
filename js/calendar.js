@@ -1,39 +1,64 @@
+// =======================
+// VARIABLES GLOBALES
+// =======================
+
 let currentDate = new Date();
-let uid = null;
-let vacancesZoneA = vacancesData.A || [];
+let vacancesZoneA = [];
+let saveTimeout = null;
 
-/* AUTH */
-auth.onAuthStateChanged(user => {
-  if (!user) {
-    window.location.href = "index.html";
-  } else {
-    uid = user.uid;
-    renderMonth();
-  }
-});
+// =======================
+// JOURS FÉRIÉS (fixes FR)
+// =======================
 
-/* FORMAT YYYY-MM-DD */
-function formatKey(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+const JOURS_FERIES_FIXES = [
+  "01-01",  // Nouvel an
+  "01-05",  // Fête du travail
+  "08-05",  // Victoire 1945
+  "14-07",  // Fête nationale
+  "15-08",  // Assomption
+  "01-11",  // Toussaint
+  "11-11",  // Armistice 1918
+  "25-12"   // Noël
+];
+
+// =======================
+// OUTILS
+// =======================
+
+function pad(n) {
+  return n.toString().padStart(2, "0");
 }
 
-/* HOLIDAYS FR */
-function getFrenchHolidays(year) {
-  const holidays = [];
-  [
-    "01-01",
-    "05-01",
-    "05-08",
-    "07-14",
-    "08-15",
-    "11-01",
-    "11-11",
-    "12-25"
-  ].forEach(d => holidays.push(`${year}-${d}`));
+function formatKey(date) {
+  return date.toISOString().split("T")[0];
+}
 
+function isWeekend(date) {
+  const d = date.getDay();
+  return d === 0 || d === 6;
+}
+
+function isJourFerie(date) {
+  // Jours fixes
+  const key = `${pad(date.getDate())}-${pad(date.getMonth() + 1)}`;
+  if (JOURS_FERIES_FIXES.includes(key)) return true;
+
+  // Jours mobiles
+  const mobiles = getJoursFeriesMobiles(date.getFullYear());
+  return mobiles.some(d =>
+    d.getDate() === date.getDate() &&
+    d.getMonth() === date.getMonth()
+  );
+}
+
+function isToday(date) {
+  const today = new Date();
+  return date.getDate() === today.getDate() &&
+         date.getMonth() === today.getMonth() &&
+         date.getFullYear() === today.getFullYear();
+}
+
+function getEasterDate(year) {
   const f = Math.floor;
   const G = year % 19;
   const C = f(year / 100);
@@ -44,114 +69,313 @@ function getFrenchHolidays(year) {
   const month = 3 + f((L + 40) / 44);
   const day = L + 28 - 31 * f(month / 4);
 
-  const easter = new Date(year, month - 1, day);
-
-  const addDays = d => {
-    const x = new Date(easter);
-    x.setDate(x.getDate() + d);
-    holidays.push(formatKey(x));
-  };
-
-  addDays(1);
-  addDays(39);
-  addDays(50);
-
-  return holidays;
+  return new Date(year, month - 1, day);
 }
 
-/* VACANCES ZONE A */
-function isVacancesZoneA(date) {
-  const key = formatKey(date);
-  return vacancesZoneA.some(v => key >= v.start && key <= v.end);
+function getJoursFeriesMobiles(year) {
+  const easter = getEasterDate(year);
+
+  function addDays(date, days) {
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d;
+  }
+
+  return [
+    addDays(easter, 1),   // Lundi de Pâques
+    addDays(easter, 39),  // Ascension
+    addDays(easter, 50)   // Lundi de Pentecôte
+  ];
 }
 
-/* RENDER */
+
+// =======================
+// VACANCES SCOLAIRES – API
+// =======================
+
+function loadVacancesZoneA() {
+  const cache = localStorage.getItem("vacancesZoneA");
+  const cacheTime = localStorage.getItem("vacancesZoneATime");
+
+  // Cache valide 30 jours
+  if (cache && cacheTime && (Date.now() - parseInt(cacheTime)) < 30 * 24 * 60 * 60 * 1000) {
+    vacancesZoneA = JSON.parse(cache);
+    return Promise.resolve();
+  }
+
+  const url = "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-calendrier-scolaire/records?limit=99&refine=location%3A%22Lyon%22";
+
+  return fetch(url)
+    .then(res => {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then(data => {
+      if (!data.results) {
+        vacancesZoneA = [];
+        return;
+      }
+
+      vacancesZoneA = data.results.map(r => ({
+  	start: r.start_date,
+  	end: r.end_date,
+  	label: r.description
+      }));
+
+      localStorage.setItem("vacancesZoneA", JSON.stringify(vacancesZoneA));
+      localStorage.setItem("vacancesZoneATime", Date.now().toString());
+
+      console.table(vacancesZoneA); // debug utile
+    })
+    .catch(err => {
+      console.error("Vacances scolaires indisponibles", err);
+      vacancesZoneA = [];
+    });
+}
+
+function getVacancesZoneA(date) {
+  const time = date.getTime();
+
+  return vacancesZoneA.find(v => {
+    return time >= new Date(v.start).getTime() &&
+           time <= new Date(v.end).getTime();
+  }) || null;
+}
+
+// =======================
+// INDICATEUR DE SAUVEGARDE
+// =======================
+
+function showSaveIndicator() {
+  const indicator = document.getElementById("saveIndicator");
+  if (!indicator) return;
+  
+  indicator.classList.add("show");
+  
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    indicator.classList.remove("show");
+  }, 2000);
+}
+
+// =======================
+// RENDER DU MOIS
+// =======================
+
 function renderMonth() {
   const calendar = document.getElementById("calendar");
+  if (!calendar) return;
+  
   calendar.innerHTML = "";
 
-  const y = currentDate.getFullYear();
-  const m = currentDate.getMonth();
-  const holidays = getFrenchHolidays(y);
+  // Mise à jour du titre
+  const title = document.getElementById("monthTitle");
+  if (title) {
+    title.textContent = currentDate.toLocaleDateString("fr-FR", {
+      month: "long",
+      year: "numeric"
+    });
+  }
 
-  const first = new Date(y, m, 1);
-  const last = new Date(y, m + 1, 0);
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const lastDay = new Date(year, month + 1, 0).getDate();
 
-  document.getElementById("weekLabel").innerText =
-    first.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-
-  const header = document.createElement("div");
-  header.className = "table-header";
-  header.innerHTML = `
-    <div>Date</div>
-    <div>Durée</div>
-    <div>Commentaires</div>
-  `;
-  calendar.appendChild(header);
-
-  for (let d = 1; d <= last.getDate(); d++) {
-    const date = new Date(y, m, d);
-    const key = formatKey(date);
-
-    const row = document.createElement("div");
-    row.className = "day-row";
-
-    const day = date.getDay();
-    if (day === 0 || day === 6) row.classList.add("weekend");
-    if (holidays.includes(key)) row.classList.add("holiday");
-    if (isVacancesZoneA(date)) row.classList.add("vacancesA");
-
-    const colDate = document.createElement("div");
-    colDate.className = "col-date";
-
-    const jour = date.toLocaleDateString("fr-FR", { weekday: "short" }).toUpperCase();
-    const num = String(d).padStart(2, "0");
-
-    colDate.innerText = `${jour}\u00A0${num}`;
-
-    const duration = document.createElement("input");
-    duration.maxLength = 5;
-
-    const comment = document.createElement("input");
-    comment.maxLength = 30;
-
-    db.ref(`users/${uid}/calendar/${key}`)
-      .once("value")
-      .then(snap => {
-        const v = snap.val() || {};
-        duration.value = v.duration || "";
-        comment.value = v.comment || "";
-      });
-
-    function save() {
-      db.ref(`users/${uid}/calendar/${key}`).set({
-        duration: duration.value,
-        comment: comment.value
-      });
-    }
-
-    duration.addEventListener("input", save);
-    comment.addEventListener("input", save);
-
-    row.append(colDate, duration, comment);
+  // Génération des jours
+  for (let d = 1; d <= lastDay; d++) {
+    const date = new Date(year, month, d);
+    const row = createDayRow(date, d);
     calendar.appendChild(row);
   }
 }
 
-/* NAV */
+function createDayRow(date, dayNumber) {
+  const row = document.createElement("div");
+  row.className = "day-row";
+
+  // Classes spéciales
+  if (isWeekend(date)) row.classList.add("weekend");
+  if (isJourFerie(date)) row.classList.add("ferie");
+  if (isToday(date)) row.classList.add("today");
+
+  // Vacances
+  const vac = getVacancesZoneA(date);
+  if (vac) {
+    row.classList.add("holiday");
+    row.title = vac.label;
+  }
+
+  // Label du jour
+  const jour = date
+    .toLocaleDateString("fr-FR", { weekday: "short" })
+    .toUpperCase()
+    .replace(".", "");
+
+  // Construction du HTML
+  row.innerHTML = `
+    <div class="col-date">${jour}. ${pad(dayNumber)}</div>
+    <input 
+      class="col-duree" 
+      type="text"
+      inputmode="text"
+      autocomplete="off"
+      placeholder="Durée"
+      data-date="${formatKey(date)}"
+      data-field="duree"
+    />
+    <input 
+      class="col-comment" 
+      type="text"
+      maxlength="100" 
+      placeholder="Ajouter un commentaire..."
+      data-date="${formatKey(date)}"
+      data-field="comment"
+    />
+  `;
+
+  // Ajout des événements
+  const inputs = row.querySelectorAll("input");
+  inputs.forEach(input => {
+    input.addEventListener("input", handleInputChange);
+  });
+
+  return row;
+}
+
+// =======================
+// GESTION DES INPUTS
+// =======================
+
+function handleInputChange(e) {
+  const input = e.target;
+  const date = input.dataset.date;
+  const field = input.dataset.field;
+  const value = input.value;
+
+  // Sauvegarde (simulée ici, à connecter à Firebase)
+  saveData(date, field, value);
+  showSaveIndicator();
+}
+
+function handleInputFocus(e) {
+  const row = e.target.closest(".day-row");
+  if (row) {
+    row.style.transform = "translateX(8px)";
+  }
+}
+
+function saveData(date, field, value) {
+  // Cette fonction devra être connectée à Firebase
+  // Pour l'instant, sauvegarde locale
+  const key = `calendar_${date}_${field}`;
+  localStorage.setItem(key, value);
+  console.log(`Saved: ${key} = ${value}`);
+}
+
+function loadData(date, field) {
+  const key = `calendar_${date}_${field}`;
+  return localStorage.getItem(key) || "";
+}
+
+// =======================
+// NAVIGATION MOIS
+// =======================
+
 function prevMonth() {
   currentDate.setMonth(currentDate.getMonth() - 1);
   renderMonth();
 }
+
 function nextMonth() {
   currentDate.setMonth(currentDate.getMonth() + 1);
   renderMonth();
 }
 
-/* SWIPE */
-let startX = 0;
-document.addEventListener("touchstart", e => startX = e.touches[0].clientX);
+function goToday() {
+  currentDate = new Date();
+  renderMonth();
+  
+  // Scroll vers aujourd'hui
+  setTimeout(() => {
+    const todayRow = document.querySelector(".day-row.today");
+    if (todayRow) {
+      todayRow.scrollIntoView({ behavior: "smooth", block: "center" });
+      const input = todayRow.querySelector("input");
+      if (input) input.focus();
+    }
+  }, 100);
+}
+
+// =======================
+// SWIPE MOBILE
+// =======================
+
+let touchStartX = 0;
+let touchStartY = 0;
+let isSwiping = false;
+
+document.addEventListener("touchstart", e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  isSwiping = false;
+}, { passive: true });
+
+document.addEventListener("touchmove", e => {
+  if (!isSwiping) {
+    const dx = Math.abs(e.touches[0].clientX - touchStartX);
+    const dy = Math.abs(e.touches[0].clientY - touchStartY);
+    
+    // Détection du swipe horizontal
+    if (dx > dy && dx > 10) {
+      isSwiping = true;
+    }
+  }
+}, { passive: true });
+
 document.addEventListener("touchend", e => {
-  const diff = e.changedTouches[0].clientX - startX;
-  if (Math.abs(diff) > 60) diff > 0 ? prevMonth() : nextMonth();
+  if (isSwiping) {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    
+    if (Math.abs(dx) > 100) {
+      if (dx > 0) {
+        prevMonth();
+      } else {
+        nextMonth();
+      }
+    }
+  }
+  isSwiping = false;
+}, { passive: true });
+
+// =======================
+// RACCOURCIS CLAVIER
+// =======================
+
+document.addEventListener("keydown", e => {
+  // Navigation avec les flèches (si aucun input n'est focus)
+  if (document.activeElement.tagName !== "INPUT") {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      prevMonth();
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      nextMonth();
+    } else if (e.key === "t" || e.key === "T") {
+      e.preventDefault();
+      goToday();
+    }
+  }
+});
+
+// =======================
+// INIT
+// =======================
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadVacancesZoneA()
+    .then(renderMonth)
+    .catch(err => {
+      console.error("Erreur d'initialisation:", err);
+      renderMonth(); // Afficher quand même le calendrier
+    });
 });
