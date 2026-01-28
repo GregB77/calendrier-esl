@@ -1,121 +1,279 @@
-:root {
-  --bg: #f4f5f7;
-  --card: #ffffff;
-  --border: #e5e7eb;
-  --text: #111827;
-  --muted: #6b7280;
-  --weekend: #d3d3d3;
-  --holiday: #d3d3d3;
+/* VARIABLES & RESET ======================================================== */
 
-  --header: rgba(255,255,255,0.9);
+:root {
+  /* Backgrounds */
+  --bg-primary: #f7f8fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f3f5;
+  --surface: #ffffff;
+
+  /* Text */
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+
+  /* Status */
+  --success: #16a34a;
+  --danger: #dc2626;
+
+  /* Borders & shadows */
+  --border: #e5e7eb;
+  --border-soft: #f1f3f5;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+
+  /* Special days */
+  --weekend-bg: #f5f5f5;
+  --weekend-hover: #e4e4e4;
+  --holiday-bg: #e8ecfc;
+  --holiday-accent: #6495ed;
+  --holiday-hover: #d1dafa;
+  --ferie-bg: #ffdedb;
+  --ferie-accent: #dc143c;
+  --ferie-hover: #ffbcb9;
+
+  /* Spacing */
+  --xs: 0.25rem;
+  --sm: 0.5rem;
+  --md: 1rem;
+  --lg: 1.5rem;
+
+  /* Radius */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+
+  /* Fonts */
+  --font-primary: "DM Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 * {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
-  font-family: Inter, system-ui, sans-serif;
+}
+
+html {
+  font-size: 16px;
 }
 
 body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
+  font-family: var(--font-primary);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
 }
 
-/* TOP BAR */
-.topbar {
+/* APP LAYOUT =============================================================== */
+
+.app-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+
+.app-header {
   position: sticky;
   top: 0;
-  z-index: 20;
-  backdrop-filter: blur(8px);
-  background: var(--header);
+  background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
-  padding: 12px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
+  z-index: 10;
 }
 
-.topbar button {
-  border: none;
-  background: none;
-  font-size: 1.2rem;
+.header-content {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--sm) var(--md);
+
+  position: relative; /* pour centrer le groupe central */
+  display: flex;
+  align-items: center;
+}
+
+.header-logo {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+}
+
+.header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.nav-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
   cursor: pointer;
 }
 
-/* CONTAINER */
-.container {
-  max-width: 900px;
-  margin: auto;
-  padding: 8px 8px 40px;
+.nav-btn svg {
+  width: 16px;
+  height: 16px;
 }
 
-/* COLUMN HEADER */
-.table-header {
-  position: sticky;
-  top: 52px;
-  z-index: 10;
-  display: grid;
-  grid-template-columns: 80px 70px 1fr;
-  padding: 8px 12px;
-  background: var(--header);
-  border-bottom: 1px solid var(--border);
-  font-size: 0.75rem;
-  color: var(--muted);
-  text-transform: uppercase;
+.header-title {
+  text-align: center;
 }
 
-/* DAY ROW */
-.day-row {
-  display: grid;
-  grid-template-columns: 80px 70px 1fr;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  margin-bottom: 6px;
-  background: var(--card);
-  border-radius: 12px;
-  border: 1px solid var(--border);
-}
-
-.col-date {
-  font-family: "Roboto Mono", monospace;
-}
-
-/* WEEKEND / HOLIDAY */
-.day-row.weekend {
-  background: var(--weekend);
-}
-
-.day-row.holiday {
-  background: var(--holiday);
-}
-
-.day-row.vacancesA {
-  border-left: 4px solid #ff3b30;
-  padding-left: 8px;
-}
-
-/* DATE COL */
-.col-date {
-  font-size: 0.75rem;
+.header-title h1 {
+  width: 14ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-align: center;
+  font-size: 1.25rem;
   font-weight: 600;
 }
 
-/* INPUTS */
+.today-btn {
+  margin-top: var(--xs);
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  cursor: pointer;
+}
+
+
+/* MAIN ===================================================================== */
+
+.app-main {
+  flex: 1;
+  padding: var(--lg);
+}
+
+.calendar-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.calendar-header {
+  display: grid;
+  grid-template-columns: 90px 60px minmax(200px, 420px);
+  padding: var(--sm) var(--md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.calendar-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+
+/* DAY ROW ================================================================== */
+
+.day-row {
+  display: grid;
+  grid-template-columns: 90px 60px minmax(200px, 420px);
+  align-items: center;
+  padding: var(--sm) var(--md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  transition: background 0.3s ease;
+}
+
+/* Date */
+.col-date {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Inputs */
 .day-row input {
   width: 100%;
+  padding: 0.35rem 0.4rem;
+  font-size: 0.9rem;
   border: none;
   background: transparent;
+  color: var(--text-primary);
   outline: none;
-  font-size: 0.9rem;
 }
 
 .day-row input::placeholder {
-  color: var(--muted);
+  color: var(--text-muted);
 }
 
-/* MOBILE TWEAK */
-@media (max-widt
+.day-row input:focus {
+  background: #f9fafb;
+  border-radius: 4px;
+}
+
+.col-duree input {
+  text-align: center;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
 
 
+/* SAVE INDICATOR =========================================================== */
+
+.save-indicator {
+  position: fixed;
+  bottom: var(--lg);
+  right: var(--lg);
+  padding: 0.6rem 1rem;
+  background: var(--success);
+  color: white;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.save-indicator.show { opacity: 1; }
+
+
+/* VACATION DAYS - GRAPHIC STYLE ============================================ */
+
+.day-row.holiday {
+  position: relative;
+  background: var(--holiday-bg);
+  border-left: 4px solid var(--holiday-accent);
+}
+
+.day-row.weekend {
+  background: var(--weekend-bg);
+}
+
+.day-row.ferie {
+  position: relative;
+  background: var(--ferie-bg);
+  border-left: 4px solid var(--ferie-accent);
+}
+
+.day-row.holiday:hover {background: var(--holiday-hover);}
+.day-row.weekend:hover {background: var(--weekend-hover);}
+.day-row.ferie:hover {background: var(--ferie-hover);}
+
+
+/* RESPONSIVE =============================================================== */
+
+@media (max-width: 768px) {
+  .header-content { flex-direction: column; }
+  .header-logo { margin-bottom: 0.25rem; }
+  .header-center { position: static; transform: none; justify-content: center; margin-top: 0; }
+  .day-row { grid-template-columns: 80px 60px 1fr; }
+  .app-main { padding: var(--md); }
+}
