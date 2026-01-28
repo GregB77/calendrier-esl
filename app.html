@@ -2,41 +2,68 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" href="favicon.ico" />
   <title>Calendrier</title>
-
-  <!-- Mobile first -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- CSS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0a0a">
   <link rel="stylesheet" href="css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;600&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="app-page">
 
-  <!-- TOP BAR -->
-<header class="topbar">
-  <button onclick="prevMonth()">◀</button>
-  <span id="weekLabel"></span>
-  <button onclick="nextMonth()">▶</button>
-</header>
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-content">
+      <!-- Logo gauche -->
+      <img src="logo.png" alt="Logo" class="header-logo">
+      <!-- Groupe flèches + titre -->
+      <div class="header-center">
+        <button class="nav-btn" onclick="prevMonth()" aria-label="Mois précédent">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </button>
+        <div class="header-title">
+          <h1 id="monthTitle">Chargement...</h1>
+          <button class="today-btn" onclick="goToday()">Aujourd'hui</button>
+        </div>
+        <button class="nav-btn" onclick="nextMonth()" aria-label="Mois suivant">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
 
-<main class="container">
-  <div id="calendar"></div>
-</main>
+  <!-- MAIN CONTENT -->
+  <main class="app-main">
+    <div class="calendar-container">
+      <!-- Calendar header -->
+      <div class="calendar-header">
+        <div class="col-header col-date">DATE</div>
+        <div class="col-header col-duree">DURÉE</div>
+        <div class="col-header col-comment">COMMENTAIRE</div>
+      </div>
 
+      <!-- Calendar body -->
+      <div id="calendar" class="calendar-body"></div>
+    </div>
+  </main>
 
-  <!-- FIREBASE LIBS (COMPAT) -->
+  <!-- SAVE INDICATOR -->
+  <div id="saveIndicator" class="save-indicator">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M20 6L9 17l-5-5"/>
+    </svg>
+    <span>Enregistré</span>
+  </div>
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <!-- APP SCRIPTS -->
   <script src="js/firebase.js"></script>
-  <script src="data/vacances.js"></script>
   <script src="js/calendar.js"></script>
-
 </body>
 </html>
-
