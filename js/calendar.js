@@ -122,7 +122,7 @@ function loadVacancesZoneA() {
       // console.table(vacancesZoneA); // debug utile
     })
     .catch(err => {
-      console.error("❌ Vacances scolaires indisponibles", err);
+      console.error("Vacances scolaires indisponibles", err);
       vacancesZoneA = [];
     });
 }
@@ -260,7 +260,7 @@ function saveData(date, field, value) {
   // Pour l'instant, sauvegarde locale
   const key = `calendar_${date}_${field}`;
   localStorage.setItem(key, value);
-  console.log(`Saved: ${key} = ${value}`);
+  console.log(`💾 Saved: ${key} = ${value}`);
 }
 
 function loadData(date, field) {
@@ -358,8 +358,9 @@ document.addEventListener("DOMContentLoaded", () => {
   loadVacancesZoneA()
     .then(renderMonth)
     .catch(err => {
-      console.error("❌ Erreur d'initialisation:", err);
+      console.error("Erreur d'initialisation:", err);
       renderMonth();
     });
 });
+
 
