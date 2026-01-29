@@ -119,10 +119,10 @@ function loadVacancesZoneA() {
       localStorage.setItem("vacancesZoneA", JSON.stringify(vacancesZoneA));
       localStorage.setItem("vacancesZoneATime", Date.now().toString());
 
-      console.table(vacancesZoneA); // debug utile
+      // console.table(vacancesZoneA); // debug utile
     })
     .catch(err => {
-      console.error("Vacances scolaires indisponibles", err);
+      console.error("❌ Vacances scolaires indisponibles", err);
       vacancesZoneA = [];
     });
 }
@@ -284,8 +284,6 @@ function nextMonth() {
 function goToday() {
   currentDate = new Date();
   renderMonth();
-  
-  // Scroll vers aujourd'hui
   setTimeout(() => {
     const todayRow = document.querySelector(".day-row.today");
     if (todayRow) {
@@ -314,7 +312,6 @@ document.addEventListener("touchmove", e => {
     const dx = Math.abs(e.touches[0].clientX - touchStartX);
     const dy = Math.abs(e.touches[0].clientY - touchStartY);
     
-    // Détection du swipe horizontal
     if (dx > dy && dx > 10) {
       isSwiping = true;
     }
@@ -340,7 +337,6 @@ document.addEventListener("touchend", e => {
 // RACCOURCIS CLAVIER ==========================================================
 
 document.addEventListener("keydown", e => {
-  // Navigation avec les flèches (si aucun input n'est focus)
   if (document.activeElement.tagName !== "INPUT") {
     if (e.key === "ArrowLeft") {
       e.preventDefault();
@@ -362,7 +358,8 @@ document.addEventListener("DOMContentLoaded", () => {
   loadVacancesZoneA()
     .then(renderMonth)
     .catch(err => {
-      console.error("Erreur d'initialisation:", err);
-      renderMonth(); // Afficher quand même le calendrier
+      console.error("❌ Erreur d'initialisation:", err);
+      renderMonth();
     });
 });
+
