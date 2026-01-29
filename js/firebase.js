@@ -9,6 +9,7 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+console.log("✅ Firebase initialisé avec succès");
 
 const auth = firebase.auth();
 const db = firebase.database();
