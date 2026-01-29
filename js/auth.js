@@ -1,6 +1,4 @@
-// =======================
-// AUTHENTIFICATION
-// =======================
+// AUTHENTIFICATION ============================================================
 
 // Définir la persistance sur SESSION (expire à la fermeture de l'onglet)
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)
@@ -45,13 +43,11 @@ function login() {
     });
 }
 
-function register() {
+function resetPassword() {
   const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
 
-  // Validation basique
-  if (!email || !password) {
-    showError("Veuillez remplir tous les champs");
+  if (!email) {
+    showError("Veuillez saisir votre adresse email");
     return;
   }
 
@@ -60,33 +56,22 @@ function register() {
     return;
   }
 
-  if (password.length < 6) {
-    showError("Le mot de passe doit contenir au moins 6 caractères");
-    return;
-  }
-
-  // Désactiver le bouton pendant l'inscription
-  const btn = event.target;
-  btn.disabled = true;
-  btn.innerHTML = '<span>Création en cours...</span>';
-
-  // Inscription Firebase
-  firebase.auth().createUserWithEmailAndPassword(email, password)
-    .then(userCredential => {
-      console.log("Compte créé:", userCredential.user.email);
-      window.location.href = "app.html";
+  firebase.auth().sendPasswordResetEmail(email)
+    .then(() => {
+      const errorDiv = document.getElementById("error");
+      errorDiv.style.display = "block";
+      errorDiv.style.color = "#22c55e";
+      errorDiv.textContent =
+        "Un email de réinitialisation vient de vous être envoyé.";
     })
     .catch(error => {
-      console.error("Erreur d'inscription:", error);
+      console.error("Erreur reset password:", error);
       showError(getFirebaseErrorMessage(error.code));
-      btn.disabled = false;
-      btn.innerHTML = '<span>Créer un compte</span>';
     });
 }
 
-// =======================
-// VALIDATION & HELPERS
-// =======================
+
+// VALIDATION & HELPERS ========================================================
 
 function isValidEmail(email) {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -128,9 +113,8 @@ function getFirebaseErrorMessage(code) {
   return messages[code] || "Une erreur est survenue. Veuillez réessayer.";
 }
 
-// =======================
-// GESTION SESSION
-// =======================
+
+// GESTION SESSION =============================================================
 
 // Vérifier si l'utilisateur est déjà connecté et rediriger si sur la page login
 firebase.auth().onAuthStateChanged(user => {
@@ -139,9 +123,8 @@ firebase.auth().onAuthStateChanged(user => {
   }
 });
 
-// =======================
-// ÉVÉNEMENTS
-// =======================
+
+// ÉVÉNEMENTS ==================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
   const emailInput = document.getElementById("email");
