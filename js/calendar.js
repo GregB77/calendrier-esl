@@ -1,14 +1,11 @@
-// =======================
-// VARIABLES GLOBALES
-// =======================
+// VARIABLES GLOBALES ==========================================================
 
 let currentDate = new Date();
 let vacancesZoneA = [];
 let saveTimeout = null;
 
-// =======================
-// JOURS FÉRIÉS (fixes FR)
-// =======================
+
+// JOURS FÉRIÉS ================================================================
 
 const JOURS_FERIES_FIXES = [
   "01-01",  // Nouvel an
@@ -21,9 +18,38 @@ const JOURS_FERIES_FIXES = [
   "25-12"   // Noël
 ];
 
-// =======================
-// OUTILS
-// =======================
+function getEasterDate(year) {
+  const f = Math.floor;
+  const G = year % 19;
+  const C = f(year / 100);
+  const H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30;
+  const I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11));
+  const J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7;
+  const L = I - J;
+  const month = 3 + f((L + 40) / 44);
+  const day = L + 28 - 31 * f(month / 4);
+
+  return new Date(year, month - 1, day);
+}
+
+function getJoursFeriesMobiles(year) {
+  const easter = getEasterDate(year);
+
+  function addDays(date, days) {
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d;
+  }
+
+  return [
+    addDays(easter, 1),   // Lundi de Pâques
+    addDays(easter, 39),  // Ascension
+    addDays(easter, 50)   // Lundi de Pentecôte
+  ];
+}
+
+
+// OUTILS ======================================================================
 
 function pad(n) {
   return n.toString().padStart(2, "0");
@@ -58,40 +84,8 @@ function isToday(date) {
          date.getFullYear() === today.getFullYear();
 }
 
-function getEasterDate(year) {
-  const f = Math.floor;
-  const G = year % 19;
-  const C = f(year / 100);
-  const H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30;
-  const I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11));
-  const J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7;
-  const L = I - J;
-  const month = 3 + f((L + 40) / 44);
-  const day = L + 28 - 31 * f(month / 4);
 
-  return new Date(year, month - 1, day);
-}
-
-function getJoursFeriesMobiles(year) {
-  const easter = getEasterDate(year);
-
-  function addDays(date, days) {
-    const d = new Date(date);
-    d.setDate(d.getDate() + days);
-    return d;
-  }
-
-  return [
-    addDays(easter, 1),   // Lundi de Pâques
-    addDays(easter, 39),  // Ascension
-    addDays(easter, 50)   // Lundi de Pentecôte
-  ];
-}
-
-
-// =======================
-// VACANCES SCOLAIRES – API
-// =======================
+// VACANCES SCOLAIRES – API ====================================================
 
 function loadVacancesZoneA() {
   const cache = localStorage.getItem("vacancesZoneA");
@@ -142,9 +136,8 @@ function getVacancesZoneA(date) {
   }) || null;
 }
 
-// =======================
-// INDICATEUR DE SAUVEGARDE
-// =======================
+
+// INDICATEUR DE SAUVEGARDE ====================================================
 
 function showSaveIndicator() {
   const indicator = document.getElementById("saveIndicator");
@@ -158,9 +151,8 @@ function showSaveIndicator() {
   }, 2000);
 }
 
-// =======================
-// RENDER DU MOIS
-// =======================
+
+// RENDER DU MOIS ==============================================================
 
 function renderMonth() {
   const calendar = document.getElementById("calendar");
@@ -242,9 +234,8 @@ function createDayRow(date, dayNumber) {
   return row;
 }
 
-// =======================
-// GESTION DES INPUTS
-// =======================
+
+// GESTION DES INPUTS ==========================================================
 
 function handleInputChange(e) {
   const input = e.target;
@@ -277,9 +268,8 @@ function loadData(date, field) {
   return localStorage.getItem(key) || "";
 }
 
-// =======================
-// NAVIGATION MOIS
-// =======================
+
+// NAVIGATION MOIS =============================================================
 
 function prevMonth() {
   currentDate.setMonth(currentDate.getMonth() - 1);
@@ -306,9 +296,8 @@ function goToday() {
   }, 100);
 }
 
-// =======================
-// SWIPE MOBILE
-// =======================
+
+// SWIPE MOBILE ================================================================
 
 let touchStartX = 0;
 let touchStartY = 0;
@@ -347,9 +336,8 @@ document.addEventListener("touchend", e => {
   isSwiping = false;
 }, { passive: true });
 
-// =======================
-// RACCOURCIS CLAVIER
-// =======================
+
+// RACCOURCIS CLAVIER ==========================================================
 
 document.addEventListener("keydown", e => {
   // Navigation avec les flèches (si aucun input n'est focus)
@@ -367,9 +355,8 @@ document.addEventListener("keydown", e => {
   }
 });
 
-// =======================
-// INIT
-// =======================
+
+// INIT ========================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
   loadVacancesZoneA()
