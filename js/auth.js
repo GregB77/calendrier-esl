@@ -3,7 +3,7 @@
 // Définir la persistance sur SESSION (expire à la fermeture de l'onglet)
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)
   .then(() => {
-    console.log("Persistance SESSION activée : l'utilisateur sera déconnecté à la fermeture de l'onglet.");
+    console.log("👤 Persistance Session activée : déconnection à la fermeture de l'onglet.");
   })
   .catch((error) => {
     console.error("Erreur de persistance :", error);
@@ -32,7 +32,7 @@ function login() {
   // Connexion Firebase
   firebase.auth().signInWithEmailAndPassword(email, password)
     .then(userCredential => {
-      console.log("Connexion réussie:", userCredential.user.email);
+      console.log("✅ Connexion réussie:", userCredential.user.email);
       window.location.href = "app.html";
     })
     .catch(error => {
@@ -155,3 +155,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
